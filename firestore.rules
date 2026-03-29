@@ -1,0 +1,135 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required, immutable) - The user's unique ID
+    //   - email: string (required, immutable) - The user's email address
+    //   - displayName: string (optional) - The user's display name
+    //   - photoURL: string (optional) - The user's profile picture URL
+    //   - createdAt: timestamp (required, immutable) - When the profile was created
+    //   - updatedAt: timestamp (optional) - When the profile was last updated
+    //   - preferences: map (optional) - User preferences for the AI assistant and alarms
+    //     - voiceType: string (enum: 'Zephyr', 'Puck', 'Kore')
+    //     - verbosity: string (enum: 'Concise', 'Normal', 'Detailed')
+    //     - intensity: string (enum: 'Gentle', 'Normal', 'Intense')
+    //     - theme: string (enum: 'light', 'dark')
+    //     - bedtime: string (optional) - User's preferred bedtime
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() >= minLen &&
+              request.resource.data[field].size() <= maxLen);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      let hasValidPreferences = !('preferences' in data) || (
+        data.preferences is map &&
+        (!('voiceType' in data.preferences) || data.preferences.voiceType in ['Zephyr', 'Puck', 'Kore']) &&
+        (!('verbosity' in data.preferences) || data.preferences.verbosity in ['Concise', 'Normal', 'Detailed']) &&
+        (!('intensity' in data.preferences) || data.preferences.intensity in ['Gentle', 'Normal', 'Intense']) &&
+        (!('theme' in data.preferences) || data.preferences.theme in ['light', 'dark']) &&
+        (!('bedtime' in data.preferences) || (data.preferences.bedtime is string && data.preferences.bedtime.size() <= 5))
+      );
+
+      return hasRequiredFields(['uid', 'email', 'createdAt']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.email is string && isValidEmail(data.email) &&
+             data.createdAt is timestamp &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('photoURL' in data) || (data.photoURL is string && isValidUrl(data.photoURL) && data.photoURL.size() <= 2000)) &&
+             hasValidPreferences;
+    }
+
+    function isValidAlarm(data) {
+      return hasRequiredFields(['id', 'hour', 'minute', 'period', 'label', 'task', 'days', 'active', 'tone', 'volume']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() <= 100 &&
+             data.hour is string && data.hour.size() <= 2 &&
+             data.minute is string && data.minute.size() <= 2 &&
+             data.period in ['AM', 'PM'] &&
+             data.label is string && data.label.size() <= 100 &&
+             data.task is string && data.task.size() <= 500 &&
+             data.days is list && data.days.size() <= 7 &&
+             data.active is bool &&
+             data.tone is string && data.tone.size() <= 1000 &&
+             data.volume is number && data.volume >= 0 && data.volume <= 100;
+    }
+
+    function isValidRecording(data) {
+      return hasRequiredFields(['id', 'url', 'createdAt', 'name']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() <= 100 &&
+             data.url is string && isValidUrl(data.url) && data.url.size() <= 2000 &&
+             data.createdAt is timestamp &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && uidUnchanged();
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && uidNotModified() && areImmutableFieldsUnchanged(['createdAt', 'email']);
+      allow delete: if isOwner(userId);
+
+      match /alarms/{alarmId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidAlarm(request.resource.data);
+        allow update: if isOwner(userId) && isValidAlarm(request.resource.data) && areImmutableFieldsUnchanged(['id']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /recordings/{recordingId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidRecording(request.resource.data);
+        allow update: if isOwner(userId) && isValidRecording(request.resource.data) && areImmutableFieldsUnchanged(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

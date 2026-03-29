@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile data including preferences",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's unique ID"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address"
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "The user's profile picture URL"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the profile was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the profile was last updated"
+        },
+        "preferences": {
+          "type": "object",
+          "description": "User preferences for the AI assistant and alarms",
+          "properties": {
+            "voiceType": {
+              "type": "string",
+              "enum": ["Zephyr", "Puck", "Kore"]
+            },
+            "verbosity": {
+              "type": "string",
+              "enum": ["Concise", "Normal", "Detailed"]
+            },
+            "intensity": {
+              "type": "string",
+              "enum": ["Gentle", "Normal", "Intense"]
+            },
+            "theme": {
+              "type": "string",
+              "enum": ["light", "dark"]
+            },
+            "bedtime": {
+              "type": "string",
+              "description": "User's preferred bedtime (e.g., '22:30')"
+            }
+          }
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Stores user profiles and preferences"
+    },
+    "users/{userId}/alarms/{alarmId}": {
+      "schema": {
+        "$ref": "#/entities/Alarm"
+      },
+      "description": "Stores user alarms"
+    },
+    "users/{userId}/recordings/{recordingId}": {
+      "schema": {
+        "title": "Recording",
+        "description": "A custom voice recording",
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "name": { "type": "string" }
+        },
+        "required": ["id", "url", "createdAt", "name"]
+      },
+      "description": "Stores user custom recordings"
+    }
+  }
+}

@@ -1,0 +1,82 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-primary: var(--color-primary-val);
+  --color-primary-container: var(--color-primary-container-val);
+  --color-secondary: var(--color-secondary-val);
+  --color-secondary-container: var(--color-secondary-container-val);
+  --color-on-secondary-container: var(--color-on-secondary-container-val);
+  
+  --color-surface: var(--color-surface-val);
+  --color-surface-container-low: var(--color-surface-container-low-val);
+  --color-surface-container-high: var(--color-surface-container-high-val);
+  --color-surface-container-highest: var(--color-surface-container-highest-val);
+  --color-surface-container-lowest: var(--color-surface-container-lowest-val);
+  
+  --color-on-surface: var(--color-on-surface-val);
+  --color-on-surface-variant: var(--color-on-surface-variant-val);
+  --color-outline-variant: var(--color-outline-variant-val);
+}
+
+:root {
+  --color-primary-val: #000666;
+  --color-primary-container-val: #1A237E;
+  --color-secondary-val: #006B5F;
+  --color-secondary-container-val: #70D8C8;
+  --color-on-secondary-container-val: #134E4A;
+  
+  --color-surface-val: #FBF8FF;
+  --color-surface-container-low-val: #F5F2FB;
+  --color-surface-container-high-val: #EAE7EF;
+  --color-surface-container-highest-val: #E4E1EA;
+  --color-surface-container-lowest-val: #FFFFFF;
+  
+  --color-on-surface-val: #1B1B21;
+  --color-on-surface-variant-val: #454652;
+  --color-outline-variant-val: #C6C5D4;
+}
+
+.dark {
+  --color-primary-val: #A8C7FA;
+  --color-primary-container-val: #004A77;
+  --color-secondary-val: #53DBC9;
+  --color-secondary-container-val: #005047;
+  --color-on-secondary-container-val: #70D8C8;
+  
+  --color-surface-val: #111318;
+  --color-surface-container-low-val: #1D2024;
+  --color-surface-container-high-val: #282A2F;
+  --color-surface-container-highest-val: #33353A;
+  --color-surface-container-lowest-val: #0F1014;
+  
+  --color-on-surface-val: #E2E2E9;
+  --color-on-surface-variant-val: #C4C6D0;
+  --color-outline-variant-val: #44474E;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-sans antialiased;
+  }
+}
+
+.glass-panel {
+  background: color-mix(in srgb, var(--color-surface-container-lowest-val) 40%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.indigo-calm-gradient {
+  background: linear-gradient(135deg, #000666 0%, #1A237E 100%);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -1,0 +1,8 @@
+{
+  "name": "VocaDo",
+  "description": "A professional digital companion for a calm transition from sleep to productivity.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
+
